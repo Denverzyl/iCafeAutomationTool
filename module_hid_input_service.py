@@ -1,5 +1,7 @@
 from ctypes import windll
 import string
+import submodule_hw_simulator
+import win32gui
 
 VkCode = {
     "back":  0x08,
@@ -91,7 +93,7 @@ def get_vk_code(key):
         return VkCode.get(key)
 
 
-def key_strike_generator(key, movement, input_mode, window_name, ui, pos_x, pos_y):
+def key_strike_generator(key, movement, input_mode, window_name, operation_list, ui):
     func = supported_input_methods.get(input_mode, "Invalid mode")
     if func == 'Invalid mode':
         msg = str("[Input]: Invalid input mode: %s" % input_mode)
@@ -104,56 +106,50 @@ def key_strike_generator(key, movement, input_mode, window_name, ui, pos_x, pos_
             ui.msg_print(msg)
             print("[input]:generate input failed!")
             return -1
-        return func(key, movement, handle, pos_x, pos_y)
+        else:
+            win32gui.SetForegroundWindow(handle)
+        return func(key, movement, handle, operation_list, ui)
 
 
-def post_message(key, movement, handle, pos_x, pos_y):
+def post_message(key, movement, handle, operation_list, ui):
     if key == 0:
-        return 0
-    elif key.find('mouse') != -1:
-        hwnd = handle
-        msg = MsgID.get(str(key + '_'+movement))
-        wparam = 0
-        pos_x = int(pos_x)
-        pos_y = int(pos_y)
-        lparam = pos_y << 16 | pos_x
-        PostMessageW(hwnd, msg, wparam, lparam)
         return 0
     else:
         hwnd = handle
-        msg = MsgID.get(movement)
-        vk_code = get_vk_code(key)
-        scan_code = MapVirtualKeyW(vk_code, 0)
-        wparam = vk_code
-        lparam = 0
-        # lparam:
-        # 0 - 15(16 bit): key repeat count
-        # 16 - 23(8 bit): scan code
-        # 24: extended flag
-        # 25 - 28(4 bit): reserved
-        # 29: context code, if ALT is pressed, 1 for pressed
-        # 30: previous key state, 1 pressed, 0 released
-        # 31: transaction state flag, 1 release, 0 press
-        if msg == 0x100:
-            lparam = (scan_code << 16) | 1  # set repeated count as 1
-        elif msg == 0x101:
-            lparam = (scan_code << 16) | 0xC0000001  # set previous key state and transaction state flag as 1
-        PostMessageW(hwnd, msg, wparam, lparam)
+        if key.find('mouse') != -1:
+            movement = str(key+'_'+movement)
+            msg = MsgID.get(movement)
+            wparam = 0
+            lparam = 0
+            PostMessageW(hwnd, msg, wparam, lparam)
+        else:
+            msg = MsgID.get(movement)
+            vk_code = get_vk_code(key)
+            scan_code = MapVirtualKeyW(vk_code, 0)
+            wparam = vk_code
+            lparam = 0
+            # lparam:
+            # 0 - 15(16 bit): key repeat count
+            # 16 - 23(8 bit): scan code
+            # 24: extended flag
+            # 25 - 28(4 bit): reserved
+            # 29: context code, if ALT is pressed, 1 for pressed
+            # 30: previous key state, 1 pressed, 0 released
+            # 31: transaction state flag, 1 release, 0 press
+            if msg == 0x100:
+                lparam = (scan_code << 16) | 1  # set repeated count as 1
+            elif msg == 0x101:
+                lparam = (scan_code << 16) | 0xC0000001  # set previous key state and transaction state flag as 1
+            PostMessageW(hwnd, msg, wparam, lparam)
         return 0
 
 
-def hook(key, movement, handle):
-
-    return 0
-
-
-def hw_simulator(key, movement, handle):
-
-    return 0
+def hw_simulator(key, movement, handle, operation_list, ui):
+    result = submodule_hw_simulator.hw_simulator_execution(operation_list, ui)
+    return result
 
 
 supported_input_methods = {
     'post_message': post_message,
-    'hook': hook,
     'hw_simulator': hw_simulator
 }

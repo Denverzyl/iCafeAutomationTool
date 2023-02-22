@@ -1,10 +1,36 @@
+from PyQt5.QtCore import QObject, QThread, pyqtSignal
+
+
+class TaskThread(QThread):
+    def __init__(self, target_function, target_params):
+        super(TaskThread, self).__init__()
+        self.target_function = target_function
+        self.target_params = target_params
+
+    def run(self):
+        self.target_function(self.target_params)
+
+
+class ClickResponse(QObject):
+    def __init__(self, target_function, target_params):
+        super(ClickResponse, self).__init__()
+        self.target_function = target_function
+        self.target_params = target_params
+        self.task_thread = TaskThread(self.target_function, self.target_params)
+
+    def task_thread_start(self):
+        self.task_thread.start()
+
+
 class GlobalSettings(object):
     def __init__(self):
         self.values = ['0' for i in range(10)]
         self.setting_table = {
             'script_name': [self.values, 0],
             'game_name': [self.values, 1],
-            'input_mode': [self.values, 2]
+            'input_mode': [self.values, 2],
+            'current_script': [self.values, 3],
+            'sys_language':[self.values, 4]
         }
 
     def edit_setting(self, setting_name, setting_value):

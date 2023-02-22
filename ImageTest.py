@@ -107,4 +107,3 @@ def image_processing(threshold_min, threshold_max, image, ui):
 #     plt.imshow(data[0])
 #     plt.show()
 
-
